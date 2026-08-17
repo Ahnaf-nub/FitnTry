@@ -1,0 +1,955 @@
+<!doctype html>
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#f6f1e7" />
+    <title>VESTA — Virtual Try-On</title>
+    <style>
+      :root {
+        --bg: #f6f1e7;
+        --panel: rgba(255, 255, 255, 0.82);
+        --panel-strong: #fff;
+        --text: #1d1410;
+        --muted: #6f5f52;
+        --line: rgba(29, 20, 16, 0.1);
+        --accent: #9f5b3d;
+        --accent-2: #1d1410;
+        --success: #13795b;
+        --shadow: 0 24px 70px rgba(29, 20, 16, 0.12);
+        --radius: 24px;
+        font-synthesis-weight: none;
+      }
+
+      * { box-sizing: border-box; }
+      html { scroll-behavior: smooth; }
+      body {
+        margin: 0;
+        font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        color: var(--text);
+        background:
+          radial-gradient(circle at top left, rgba(159, 91, 61, 0.16), transparent 28%),
+          radial-gradient(circle at top right, rgba(19, 121, 91, 0.12), transparent 24%),
+          linear-gradient(135deg, #fbf8f3, var(--bg));
+        min-height: 100vh;
+      }
+
+      a { color: inherit; text-decoration: none; }
+      button, input, select, textarea { font: inherit; }
+
+      .shell {
+        position: relative;
+        max-width: 1280px;
+        margin: 0 auto;
+        padding: 20px;
+      }
+
+      .noise {
+        pointer-events: none;
+        position: fixed;
+        inset: 0;
+        opacity: 0.08;
+        background-image: radial-gradient(circle at 1px 1px, rgba(29, 20, 16, 0.9) 1px, transparent 0);
+        background-size: 16px 16px;
+        mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.7), transparent 96%);
+      }
+
+      .topbar {
+        position: sticky;
+        top: 12px;
+        z-index: 20;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        padding: 16px 18px;
+        margin-bottom: 20px;
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.7);
+        backdrop-filter: blur(18px);
+        box-shadow: 0 10px 30px rgba(29, 20, 16, 0.06);
+      }
+
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        min-width: 0;
+      }
+
+      .brand-mark {
+        width: 44px;
+        height: 44px;
+        border-radius: 14px;
+        display: grid;
+        place-items: center;
+        background: linear-gradient(145deg, var(--accent-2), #4a3328);
+        color: #fff;
+        font-weight: 800;
+        letter-spacing: 0.08em;
+      }
+
+      .brand-copy { display: grid; gap: 2px; }
+      .brand-copy strong { font-size: 14px; letter-spacing: 0.18em; text-transform: uppercase; }
+      .brand-copy span { font-size: 12px; color: var(--muted); }
+
+      .nav {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        justify-content: center;
+      }
+
+      .nav a {
+        padding: 10px 14px;
+        border-radius: 999px;
+        border: 1px solid transparent;
+        color: var(--muted);
+        transition: 160ms ease;
+      }
+      .nav a:hover { border-color: var(--line); color: var(--text); background: rgba(255, 255, 255, 0.72); }
+
+      .auth-pill {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 10px 14px;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.7);
+        border: 1px solid var(--line);
+        white-space: nowrap;
+      }
+
+      .auth-pill .status-dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background: #b4a596;
+      }
+      .auth-pill.connected .status-dot { background: var(--success); }
+
+      .grid {
+        display: grid;
+        gap: 20px;
+      }
+
+      .hero {
+        display: grid;
+        grid-template-columns: 1.2fr 0.8fr;
+        gap: 20px;
+        align-items: stretch;
+      }
+
+      .panel {
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        backdrop-filter: blur(22px);
+        box-shadow: var(--shadow);
+      }
+
+      .hero-main {
+        padding: 32px;
+        overflow: hidden;
+        position: relative;
+      }
+
+      .eyebrow {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 12px;
+        border-radius: 999px;
+        background: rgba(159, 91, 61, 0.08);
+        color: var(--accent);
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: 0.18em;
+      }
+
+      h1, h2, h3, p { margin: 0; }
+      h1 {
+        margin-top: 16px;
+        font-size: clamp(42px, 5vw, 76px);
+        line-height: 0.95;
+        letter-spacing: -0.05em;
+        max-width: 10ch;
+      }
+
+      .hero-copy {
+        margin-top: 20px;
+        max-width: 62ch;
+        font-size: 17px;
+        line-height: 1.7;
+        color: var(--muted);
+      }
+
+      .hero-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        margin-top: 26px;
+      }
+
+      .button {
+        appearance: none;
+        border: 0;
+        cursor: pointer;
+        border-radius: 999px;
+        padding: 13px 18px;
+        font-weight: 700;
+        transition: 160ms ease;
+      }
+      .button.primary { background: var(--accent-2); color: #fff; }
+      .button.primary:hover { transform: translateY(-1px); }
+      .button.secondary { background: rgba(255, 255, 255, 0.72); color: var(--text); border: 1px solid var(--line); }
+      .button.secondary:hover { background: #fff; }
+
+      .hero-stats {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 14px;
+        margin-top: 28px;
+      }
+      .stat {
+        padding: 16px;
+        border-radius: 18px;
+        background: rgba(255, 255, 255, 0.72);
+        border: 1px solid var(--line);
+      }
+      .stat strong { display: block; font-size: 18px; }
+      .stat span { display: block; margin-top: 6px; font-size: 12px; color: var(--muted); }
+
+      .hero-side {
+        display: grid;
+        gap: 20px;
+      }
+
+      .auth-card, .preview-card, .section-card, .result-card {
+        padding: 22px;
+      }
+
+      .auth-tabs {
+        display: flex;
+        gap: 10px;
+        margin: 18px 0 16px;
+      }
+
+      .tab {
+        flex: 1;
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        padding: 11px 14px;
+        background: rgba(255, 255, 255, 0.7);
+        color: var(--muted);
+        cursor: pointer;
+        font-weight: 700;
+      }
+      .tab.active { background: var(--text); color: #fff; }
+
+      form { display: grid; gap: 12px; }
+
+      label { display: grid; gap: 6px; font-size: 13px; font-weight: 700; color: var(--text); }
+
+      input, select, textarea {
+        width: 100%;
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        padding: 13px 14px;
+        background: rgba(255, 255, 255, 0.85);
+        color: var(--text);
+      }
+
+      input:focus, select:focus, textarea:focus {
+        outline: 2px solid rgba(159, 91, 61, 0.18);
+        border-color: rgba(159, 91, 61, 0.35);
+      }
+
+      .micro { font-size: 12px; color: var(--muted); line-height: 1.5; }
+
+      .alert {
+        padding: 13px 14px;
+        border-radius: 14px;
+        border: 1px solid var(--line);
+        background: rgba(255, 255, 255, 0.75);
+        color: var(--text);
+      }
+      .alert.error { border-color: rgba(180, 47, 47, 0.22); background: rgba(247, 237, 237, 0.9); }
+      .alert.success { border-color: rgba(19, 121, 91, 0.18); background: rgba(235, 248, 243, 0.9); }
+
+      .section {
+        display: grid;
+        gap: 18px;
+      }
+
+      .section-head {
+        display: flex;
+        align-items: end;
+        justify-content: space-between;
+        gap: 16px;
+      }
+      .section-head p { color: var(--muted); line-height: 1.6; max-width: 58ch; }
+
+      .toggle-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+      }
+
+      .chip {
+        border: 1px solid var(--line);
+        background: rgba(255, 255, 255, 0.75);
+        border-radius: 999px;
+        padding: 10px 14px;
+        cursor: pointer;
+        color: var(--muted);
+      }
+      .chip.active { color: var(--text); border-color: rgba(159, 91, 61, 0.35); background: rgba(159, 91, 61, 0.08); }
+
+      .catalog {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 14px;
+      }
+
+      .item {
+        overflow: hidden;
+        border-radius: 20px;
+        border: 1px solid var(--line);
+        background: rgba(255, 255, 255, 0.78);
+        cursor: pointer;
+        text-align: left;
+        padding: 0;
+      }
+      .item img { display: block; width: 100%; aspect-ratio: 4 / 5; object-fit: cover; }
+      .item .meta { padding: 12px; display: grid; gap: 4px; }
+      .item .meta strong { font-size: 14px; }
+      .item .meta span { font-size: 12px; color: var(--muted); }
+
+      .tryon-grid {
+        display: grid;
+        grid-template-columns: 0.8fr 1.2fr;
+        gap: 18px;
+      }
+
+      .stack { display: grid; gap: 12px; }
+
+      .dropzone {
+        border: 1.5px dashed rgba(159, 91, 61, 0.3);
+        border-radius: 20px;
+        padding: 18px;
+        background: rgba(255, 255, 255, 0.58);
+      }
+      .dropzone strong { display: block; margin-bottom: 6px; }
+
+      .preview-figure {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+      }
+      .preview-figure figure {
+        margin: 0;
+        overflow: hidden;
+        border-radius: 18px;
+        border: 1px solid var(--line);
+        background: rgba(255, 255, 255, 0.7);
+      }
+      .preview-figure img { display: block; width: 100%; aspect-ratio: 4 / 5; object-fit: cover; }
+      .preview-figure figcaption { padding: 10px 12px; font-size: 12px; color: var(--muted); }
+
+      .result-box {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+        align-items: start;
+      }
+      .result-box img {
+        display: block;
+        width: 100%;
+        border-radius: 18px;
+        border: 1px solid var(--line);
+        background: #fff;
+      }
+
+      .footer {
+        padding: 10px 2px 24px;
+        color: var(--muted);
+        font-size: 12px;
+      }
+
+      @media (max-width: 980px) {
+        .hero, .tryon-grid, .catalog, .result-box { grid-template-columns: 1fr; }
+        .hero-stats { grid-template-columns: 1fr; }
+        .topbar { border-radius: 28px; flex-wrap: wrap; }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="noise"></div>
+    <div class="shell">
+      <header class="topbar">
+        <div class="brand">
+          <div class="brand-mark">V</div>
+          <div class="brand-copy">
+            <strong>VESTA</strong>
+            <span>Virtual try-on, discovery, and saved looks</span>
+          </div>
+        </div>
+
+        <nav class="nav">
+          <a href="#home">Home</a>
+          <a href="#auth">Auth</a>
+          <a href="#try-on">Try On</a>
+          <a href="#discover">Discover</a>
+          <a href="#saved">Saved</a>
+          <a href="#about">About</a>
+        </nav>
+
+        <div id="authPill" class="auth-pill">
+          <span class="status-dot"></span>
+          <span id="authPillText">Not signed in</span>
+        </div>
+      </header>
+
+      <main class="grid">
+        <section id="home" class="hero">
+          <div class="panel hero-main">
+            <span class="eyebrow">AI-powered virtual try-on</span>
+            <h1>Don’t imagine the outfit. See yourself in it.</h1>
+            <p class="hero-copy">
+              VESTA helps you discover, compare, and save looks with a tailored try-on flow and a Supabase-backed account system.
+              This page is served directly from the FastAPI backend, so it works without npm or a frontend build step.
+            </p>
+            <div class="hero-actions">
+              <button class="button primary" onclick="document.getElementById('try-on').scrollIntoView({behavior:'smooth'})">Start Try-On</button>
+              <button class="button secondary" onclick="document.getElementById('discover').scrollIntoView({behavior:'smooth'})">Browse Looks</button>
+            </div>
+            <div class="hero-stats">
+              <div class="stat"><strong>30s</strong><span>Average try-on workflow</span></div>
+              <div class="stat"><strong>4 sections</strong><span>Home, discover, saved, about</span></div>
+              <div class="stat"><strong>Supabase</strong><span>Backend auth integration</span></div>
+            </div>
+          </div>
+
+          <aside class="hero-side">
+            <div id="auth" class="panel auth-card">
+              <h2>Account</h2>
+              <p class="micro">Sign up or log in with a username and password. The backend maps the username to Supabase auth.</p>
+              <div class="auth-tabs">
+                <button id="tabSignIn" class="tab active" type="button">Sign in</button>
+                <button id="tabSignUp" class="tab" type="button">Sign up</button>
+              </div>
+              <div id="authMessage" class="alert" style="display:none"></div>
+              <form id="authForm">
+                <label>
+                  Username
+                  <input id="authUsername" autocomplete="username" minlength="3" required placeholder="ahnaf" />
+                </label>
+                <label>
+                  Password
+                  <input id="authPassword" type="password" autocomplete="current-password" minlength="6" required placeholder="••••••••" />
+                </label>
+                <button id="authSubmit" class="button primary" type="submit">Sign in</button>
+              </form>
+              <div class="micro" style="margin-top:12px">
+                Your session is stored locally and validated against Supabase when a token exists.
+              </div>
+            </div>
+
+            <div class="panel preview-card">
+              <h2>Sample flow</h2>
+              <p class="micro" style="margin-top:8px">Use a sample model, pick a garment, and generate a result through the backend.</p>
+              <div class="preview-figure" style="margin-top:14px">
+                <figure>
+                  <img src="https://picsum.photos/seed/vesta-model-01/700/900" alt="Sample model before try-on" />
+                  <figcaption>Before</figcaption>
+                </figure>
+                <figure>
+                  <img src="https://picsum.photos/seed/vesta-result-01/700/900" alt="Example generated try-on result" />
+                  <figcaption>After</figcaption>
+                </figure>
+              </div>
+            </div>
+          </aside>
+        </section>
+
+        <section id="discover" class="panel section-card section">
+          <div class="section-head">
+            <div>
+              <span class="eyebrow">Discover</span>
+              <h2 style="margin-top:12px; font-size: clamp(26px, 3vw, 40px);">Curated edits from the VESTA studio</h2>
+            </div>
+            <p>Browse a styled set of looks inspired by the Vesta frontend. Click a garment to load it into the try-on section.</p>
+          </div>
+          <div class="toggle-row" id="categoryRow"></div>
+          <div id="catalog" class="catalog"></div>
+        </section>
+
+        <section id="try-on" class="panel section-card section">
+          <div class="section-head">
+            <div>
+              <span class="eyebrow">Try On</span>
+              <h2 style="margin-top:12px; font-size: clamp(26px, 3vw, 40px);">Build your try-on</h2>
+            </div>
+            <p>Drop in a photo, select a garment, and let the backend run the YouCam generation job.</p>
+          </div>
+
+          <div class="tryon-grid">
+            <div class="stack">
+              <div class="dropzone">
+                <strong>Your photo</strong>
+                <div class="micro">Use a URL or upload a file.</div>
+                <div style="display:grid; gap:10px; margin-top:12px">
+                  <input id="userImageUrl" placeholder="https://... or data URL" />
+                  <input id="userImageFile" type="file" accept="image/jpeg,image/png,image/webp" />
+                  <button class="button secondary" id="useSampleModel" type="button">Use sample model</button>
+                </div>
+              </div>
+
+              <div class="dropzone">
+                <strong>Garment</strong>
+                <div class="micro">Choose from the catalog or use your own image.</div>
+                <div style="display:grid; gap:10px; margin-top:12px">
+                  <input id="garmentImageUrl" placeholder="https://... or data URL" />
+                  <input id="garmentImageFile" type="file" accept="image/jpeg,image/png,image/webp" />
+                  <select id="garmentCategory">
+                    <option value="Tops">Tops</option>
+                    <option value="Bottoms">Bottoms</option>
+                    <option value="Dresses">Dresses</option>
+                    <option value="Jackets">Jackets</option>
+                    <option value="Full Looks">Full Looks</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="dropzone">
+                <strong>Customize</strong>
+                <div class="micro">These settings guide the request but don’t change the backend contract.</div>
+                <div style="display:grid; gap:10px; margin-top:12px">
+                  <select id="bodyArea">
+                    <option value="upper">Upper body</option>
+                    <option value="full">Full body</option>
+                    <option value="lower">Lower body</option>
+                  </select>
+                  <select id="style">
+                    <option value="Office">Office</option>
+                    <option value="Casual">Casual</option>
+                    <option value="Date">Date</option>
+                    <option value="Evening">Evening</option>
+                  </select>
+                  <button id="generateBtn" class="button primary" type="button">Generate Try-On</button>
+                </div>
+              </div>
+            </div>
+
+            <div class="stack">
+              <div class="panel result-card" style="padding:0; overflow:hidden">
+                <div style="padding:22px">
+                  <h3>Preview</h3>
+                  <p class="micro" style="margin-top:8px">The preview updates when you select a garment.</p>
+                </div>
+                <div class="preview-figure" style="padding:0 22px 22px">
+                  <figure>
+                    <img id="previewUser" src="https://picsum.photos/seed/vesta-model-01/700/900" alt="Selected user image preview" />
+                    <figcaption>Photo</figcaption>
+                  </figure>
+                  <figure>
+                    <img id="previewGarment" src="https://picsum.photos/seed/vesta-top-01/700/900" alt="Selected garment image preview" />
+                    <figcaption>Garment</figcaption>
+                  </figure>
+                </div>
+              </div>
+
+              <div class="panel result-card">
+                <h3>Status</h3>
+                <div id="status" class="alert" style="margin-top:12px">Ready.</div>
+                <div id="result" class="stack" style="margin-top:14px"></div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section id="saved" class="panel section-card section">
+          <div class="section-head">
+            <div>
+              <span class="eyebrow">Saved Looks</span>
+              <h2 style="margin-top:12px; font-size: clamp(26px, 3vw, 40px);">Looks worth keeping</h2>
+            </div>
+            <p>Seeded examples keep the gallery from feeling empty, even before you save your own look.</p>
+          </div>
+          <div id="savedGrid" class="catalog"></div>
+        </section>
+
+        <section id="about" class="panel section-card section">
+          <span class="eyebrow">About</span>
+          <h2 style="margin-top:12px; font-size: clamp(26px, 3vw, 40px);">Why this page is different</h2>
+          <p class="hero-copy" style="margin-top:12px; max-width: 80ch; font-size: 16px">
+            This frontend is intentionally backend-hosted so it works in this environment without Node, npm, or a Vite build.
+            The product behavior still matches the VESTA flow: sign in with Supabase, pick a look, and generate a try-on through the backend.
+          </p>
+        </section>
+
+        <div class="footer">
+          VESTA demo shell served by FastAPI. If you later install Node/npm, I can switch this back to the full React/Vite build.
+        </div>
+      </main>
+    </div>
+
+    <script>
+      const apiBase = '';
+      const sampleModels = [
+        'https://picsum.photos/seed/vesta-model-01/700/900',
+        'https://picsum.photos/seed/vesta-model-02/700/900',
+        'https://picsum.photos/seed/vesta-model-03/700/900',
+        'https://picsum.photos/seed/vesta-model-04/700/900',
+      ];
+
+      const catalogItems = [
+        { name: 'Silk Wrap Blouse', category: 'Tops', price: '$168', image: 'https://picsum.photos/seed/vesta-top-01/600/800' },
+        { name: 'Ribbed Knit Turtleneck', category: 'Tops', price: '$96', image: 'https://picsum.photos/seed/vesta-top-02/600/800' },
+        { name: 'Tailored Wool Blazer', category: 'Jackets', price: '$340', image: 'https://picsum.photos/seed/vesta-jacket-02/600/800' },
+        { name: 'Bias-Cut Slip Dress', category: 'Dresses', price: '$224', image: 'https://picsum.photos/seed/vesta-dress-01/600/800' },
+        { name: 'Wide-Leg Trousers', category: 'Bottoms', price: '$148', image: 'https://picsum.photos/seed/vesta-bottom-01/600/800' },
+        { name: 'Structured Midi Dress', category: 'Dresses', price: '$262', image: 'https://picsum.photos/seed/vesta-dress-02/600/800' },
+        { name: 'Trench Coat, Belted', category: 'Full Looks', price: '$398', image: 'https://picsum.photos/seed/vesta-look-01/600/800' },
+        { name: 'Oxford Poplin Shirt', category: 'Tops', price: '$108', image: 'https://picsum.photos/seed/vesta-top-03/600/800' },
+      ];
+
+      const savedLooks = [
+        { name: 'Office edit', category: 'Saved', price: 'Jul 18', image: 'https://picsum.photos/seed/vesta-result-01/600/800' },
+        { name: 'Date night', category: 'Saved', price: 'Jul 22', image: 'https://picsum.photos/seed/vesta-result-02/600/800' },
+        { name: 'Casual layering', category: 'Saved', price: 'Jul 29', image: 'https://picsum.photos/seed/vesta-result-03/600/800' },
+        { name: 'Weekend look', category: 'Saved', price: 'Aug 01', image: 'https://picsum.photos/seed/vesta-result-04/600/800' },
+      ];
+
+      const authPill = document.getElementById('authPill');
+      const authPillText = document.getElementById('authPillText');
+      const authForm = document.getElementById('authForm');
+      const authMessage = document.getElementById('authMessage');
+      const authUsername = document.getElementById('authUsername');
+      const authPassword = document.getElementById('authPassword');
+      const authSubmit = document.getElementById('authSubmit');
+      const tabSignIn = document.getElementById('tabSignIn');
+      const tabSignUp = document.getElementById('tabSignUp');
+      const userImageUrl = document.getElementById('userImageUrl');
+      const garmentImageUrl = document.getElementById('garmentImageUrl');
+      const userImageFile = document.getElementById('userImageFile');
+      const garmentImageFile = document.getElementById('garmentImageFile');
+      const previewUser = document.getElementById('previewUser');
+      const previewGarment = document.getElementById('previewGarment');
+      const statusEl = document.getElementById('status');
+      const resultEl = document.getElementById('result');
+      const categoryRow = document.getElementById('categoryRow');
+      const catalogEl = document.getElementById('catalog');
+      const savedGrid = document.getElementById('savedGrid');
+      const generateBtn = document.getElementById('generateBtn');
+      const useSampleModelBtn = document.getElementById('useSampleModel');
+      const garmentCategory = document.getElementById('garmentCategory');
+      const bodyArea = document.getElementById('bodyArea');
+      const style = document.getElementById('style');
+
+      let authMode = 'signin';
+      let authState = loadAuthState();
+      let activeCategory = 'All';
+
+      const categories = ['All', 'Tops', 'Bottoms', 'Dresses', 'Jackets', 'Full Looks'];
+
+      function loadAuthState() {
+        try {
+          return JSON.parse(localStorage.getItem('vesta-auth') || 'null');
+        } catch {
+          return null;
+        }
+      }
+
+      function saveAuthState(state) {
+        authState = state;
+        if (state) localStorage.setItem('vesta-auth', JSON.stringify(state));
+        else localStorage.removeItem('vesta-auth');
+        renderAuthState();
+      }
+
+      function setMessage(el, text, kind) {
+        el.style.display = 'block';
+        el.className = `alert ${kind || ''}`.trim();
+        el.textContent = text;
+      }
+
+      function clearMessage(el) {
+        el.style.display = 'none';
+        el.textContent = '';
+      }
+
+      function renderAuthState() {
+        if (authState && authState.user) {
+          authPill.classList.add('connected');
+          const name = authState.user?.user_metadata?.username || authState.user?.email || 'Signed in';
+          authPillText.textContent = name;
+        } else {
+          authPill.classList.remove('connected');
+          authPillText.textContent = 'Not signed in';
+        }
+      }
+
+      function renderAuthMode() {
+        const isSignIn = authMode === 'signin';
+        tabSignIn.classList.toggle('active', isSignIn);
+        tabSignUp.classList.toggle('active', !isSignIn);
+        authSubmit.textContent = isSignIn ? 'Sign in' : 'Sign up';
+        authPassword.autocomplete = isSignIn ? 'current-password' : 'new-password';
+        authForm.dataset.mode = authMode;
+      }
+
+      function renderCategories() {
+        categoryRow.innerHTML = '';
+        categories.forEach((category) => {
+          const button = document.createElement('button');
+          button.type = 'button';
+          button.textContent = category;
+          button.className = `chip ${category === activeCategory ? 'active' : ''}`;
+          button.addEventListener('click', () => {
+            activeCategory = category;
+            renderCategories();
+            renderCatalog();
+          });
+          categoryRow.appendChild(button);
+        });
+      }
+
+      function renderCatalog() {
+        const filtered = activeCategory === 'All'
+          ? catalogItems
+          : catalogItems.filter((item) => item.category === activeCategory);
+
+        catalogEl.innerHTML = '';
+        filtered.forEach((item) => {
+          const button = document.createElement('button');
+          button.type = 'button';
+          button.className = 'item';
+          button.innerHTML = `
+            <img src="${item.image}" alt="${item.name}" />
+            <div class="meta">
+              <strong>${item.name}</strong>
+              <span>${item.category} · ${item.price}</span>
+            </div>
+          `;
+          button.addEventListener('click', () => {
+            garmentImageUrl.value = item.image;
+            garmentCategory.value = item.category;
+            previewGarment.src = item.image;
+            previewGarment.alt = item.name;
+            garmentCategory.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          });
+          catalogEl.appendChild(button);
+        });
+      }
+
+      function renderSavedLooks() {
+        savedGrid.innerHTML = '';
+        savedLooks.forEach((item) => {
+          const card = document.createElement('div');
+          card.className = 'item';
+          card.innerHTML = `
+            <img src="${item.image}" alt="${item.name}" />
+            <div class="meta">
+              <strong>${item.name}</strong>
+              <span>${item.price}</span>
+            </div>
+          `;
+          savedGrid.appendChild(card);
+        });
+      }
+
+      async function api(path, options) {
+        const headers = Object.assign({ 'Content-Type': 'application/json' }, options?.headers || {});
+        if (authState?.access_token && path === '/api/auth/session') {
+          headers.Authorization = `Bearer ${authState.access_token}`;
+        }
+        const response = await fetch(path, { ...options, headers });
+        let data = null;
+        try {
+          data = await response.json();
+        } catch {
+          data = null;
+        }
+        if (!response.ok) {
+          const message = data?.detail || data?.message || 'Request failed.';
+          throw new Error(message);
+        }
+        return data;
+      }
+
+      async function syncSession() {
+        if (!authState?.access_token) return;
+        try {
+          const session = await api('/api/auth/session', { method: 'GET' });
+          authState = { ...authState, user: session.user, access_token: session.access_token ?? authState.access_token };
+          saveAuthState(authState);
+          setMessage(authMessage, 'Session restored.', 'success');
+        } catch (error) {
+          saveAuthState(null);
+          setMessage(authMessage, error.message, 'error');
+        }
+      }
+
+      tabSignIn.addEventListener('click', () => {
+        authMode = 'signin';
+        renderAuthMode();
+      });
+
+      tabSignUp.addEventListener('click', () => {
+        authMode = 'signup';
+        renderAuthMode();
+      });
+
+      authForm.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        clearMessage(authMessage);
+        authSubmit.disabled = true;
+        authSubmit.textContent = authMode === 'signin' ? 'Signing in...' : 'Creating account...';
+        try {
+          const payload = {
+            username: authUsername.value.trim(),
+            password: authPassword.value,
+          };
+          const path = authMode === 'signin' ? '/api/auth/signin' : '/api/auth/signup';
+          const data = await api(path, { method: 'POST', body: JSON.stringify(payload) });
+          saveAuthState({ access_token: data.access_token, refresh_token: data.refresh_token, user: data.user });
+          setMessage(authMessage, data.message || 'Signed in.', 'success');
+        } catch (error) {
+          setMessage(authMessage, error.message, 'error');
+        } finally {
+          authSubmit.disabled = false;
+          renderAuthMode();
+        }
+      });
+
+      useSampleModelBtn.addEventListener('click', () => {
+        const model = sampleModels[Math.floor(Math.random() * sampleModels.length)];
+        userImageUrl.value = model;
+        previewUser.src = model;
+      });
+
+      userImageUrl.addEventListener('input', () => {
+        if (userImageUrl.value.trim()) previewUser.src = userImageUrl.value.trim();
+      });
+      garmentImageUrl.addEventListener('input', () => {
+        if (garmentImageUrl.value.trim()) previewGarment.src = garmentImageUrl.value.trim();
+      });
+
+      async function fileToDataUrl(file) {
+        return await new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(String(reader.result || ''));
+          reader.onerror = () => reject(reader.error || new Error('Unable to read file'));
+          reader.readAsDataURL(file);
+        });
+      }
+
+      userImageFile.addEventListener('change', async () => {
+        const file = userImageFile.files && userImageFile.files[0];
+        if (!file) return;
+        const dataUrl = await fileToDataUrl(file);
+        userImageUrl.value = dataUrl;
+        previewUser.src = dataUrl;
+      });
+
+      garmentImageFile.addEventListener('change', async () => {
+        const file = garmentImageFile.files && garmentImageFile.files[0];
+        if (!file) return;
+        const dataUrl = await fileToDataUrl(file);
+        garmentImageUrl.value = dataUrl;
+        previewGarment.src = dataUrl;
+      });
+
+      garmentCategory.addEventListener('change', () => {
+        const selected = catalogItems.find((item) => item.category === garmentCategory.value);
+        if (selected && !garmentImageUrl.value.trim()) {
+          garmentImageUrl.value = selected.image;
+          previewGarment.src = selected.image;
+        }
+      });
+
+      generateBtn.addEventListener('click', async () => {
+        clearMessage(statusEl);
+        resultEl.innerHTML = '';
+
+        const userImage = userImageUrl.value.trim();
+        const garmentImage = garmentImageUrl.value.trim();
+
+        if (!userImage) {
+          setMessage(statusEl, 'Add a user photo first.', 'error');
+          return;
+        }
+
+        if (!garmentImage) {
+          setMessage(statusEl, 'Choose a garment first.', 'error');
+          return;
+        }
+
+        setMessage(statusEl, 'Creating try-on job...', '');
+
+        try {
+          const data = await api('/api/try-on', {
+            method: 'POST',
+            body: JSON.stringify({
+              userImage,
+              garmentImage,
+              garmentCategory: garmentCategory.value,
+              bodyArea: bodyArea.value,
+              style: style.value,
+            }),
+          });
+
+          setMessage(statusEl, `Job started. Polling for the result... (${data.jobId})`, '');
+          pollJob(data.jobId);
+        } catch (error) {
+          setMessage(statusEl, error.message, 'error');
+        }
+      });
+
+      async function pollJob(jobId) {
+        for (let attempt = 0; attempt < 60; attempt += 1) {
+          try {
+            const job = await api(`/api/try-on/${jobId}`, { method: 'GET' });
+            if (job.status === 'completed' && job.resultImage) {
+              setMessage(statusEl, 'Try-on completed.', 'success');
+              resultEl.innerHTML = `
+                <div class="result-box">
+                  <img src="${userImageUrl.value.trim()}" alt="Before try-on" />
+                  <img src="${job.resultImage}" alt="Generated try-on result" />
+                </div>
+              `;
+              return;
+            }
+            if (job.status === 'failed') {
+              setMessage(statusEl, job.error || 'Generation failed.', 'error');
+              return;
+            }
+            setMessage(statusEl, `Processing... ${attempt + 1}s`, '');
+          } catch (error) {
+            setMessage(statusEl, error.message, 'error');
+            return;
+          }
+          await new Promise((resolve) => setTimeout(resolve, 1000));
+        }
+
+        setMessage(statusEl, 'The generation is still running. Please check back soon.', '');
+      }
+
+      renderAuthMode();
+      renderAuthState();
+      renderCategories();
+      renderCatalog();
+      renderSavedLooks();
+      syncSession();
+
+      if (!userImageUrl.value) userImageUrl.value = sampleModels[0];
+      if (!garmentImageUrl.value) garmentImageUrl.value = catalogItems[0].image;
+      previewUser.src = sampleModels[0];
+      previewGarment.src = catalogItems[0].image;
+    </script>
+  </body>
+</html>

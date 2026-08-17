@@ -1,0 +1,139 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    @apply border-line;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-canvas text-ink font-sans antialiased;
+    font-feature-settings: "ss01" on, "cv01" on;
+  }
+
+  ::selection {
+    background-color: #6e1e28;
+    color: #f6f3ec;
+  }
+
+  :focus-visible {
+    outline: 2px solid #6e1e28;
+    outline-offset: 3px;
+  }
+
+  h1, h2, h3, h4 {
+    @apply font-display text-ink;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.001ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.001ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
+
+@layer utilities {
+  .eyebrow {
+    @apply text-[11px] uppercase tracking-widest2 text-ink-faint font-medium;
+  }
+
+  .container-FitnTry {
+    @apply mx-auto w-full max-w-[1280px] px-5 sm:px-8 lg:px-10;
+  }
+
+  .seam-rule {
+    @apply relative w-px bg-line-strong;
+  }
+
+  .hairline {
+    @apply border-t border-line;
+  }
+
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .shimmer-bg {
+    background: linear-gradient(90deg, #ece7db 0px, #f6f3ec 40px, #ece7db 80px);
+    background-size: 800px 100%;
+  }
+}
+
+/* =========================================================
+   FULL CONTRAST DARK MODE OVERRIDES
+   ========================================================= */
+
+/* 1. Global Page Background & Base Text */
+html.dark,
+html.dark body {
+  background-color: #0f0f11 !important;
+  color: #f4f4f5 !important;
+}
+
+/* 2. Main Containers, Sections & Cards */
+html.dark main,
+html.dark section,
+html.dark .bg-canvas,
+html.dark .bg-surface {
+  background-color: #0f0f11 !important;
+}
+
+/* 3. Header & Navigation Bar Contrast */
+html.dark header,
+html.dark nav {
+  background-color: #18181b !important;
+  border-color: #27272a !important;
+}
+
+/* 4. Headings & Bold Text (Maximum Contrast White) */
+html.dark h1,
+html.dark h2,
+html.dark h3,
+html.dark h4,
+html.dark h5,
+html.dark h6,
+html.dark strong,
+html.dark b,
+html.dark .text-ink {
+  color: #ffffff !important;
+}
+
+/* 5. Subtext, Paragraphs & Soft Text (Readable Off-White/Light Gray) */
+html.dark p,
+html.dark span,
+html.dark label,
+html.dark .text-ink-soft {
+  color: #d4d4d8 !important;
+}
+
+/* 6. Navigation Links & Buttons Text */
+html.dark header a,
+html.dark header button,
+html.dark nav a,
+html.dark nav span {
+  color: #f4f4f5 !important;
+}
+
+/* 7. Hover States for Links */
+html.dark header a:hover,
+html.dark nav a:hover {
+  color: #38bdf8 !important; /* Soft accent blue on hover */
+}
+
+/* 8. Cards & Outlined Elements */
+html.dark .border,
+html.dark [class*="border-"] {
+  border-color: #27272a !important;
+}
