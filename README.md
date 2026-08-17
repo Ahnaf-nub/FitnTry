@@ -306,10 +306,6 @@ FitnTry is deployed on Vercel.
 
 **Live site:** http://fitntry.vercel.app/
 
-<!-- PLACEHOLDER: Add deployment screenshot here -->
-
-![Deployed Application — PLACEHOLDER](./screenshots/deployment.png)
-
 The FastAPI backend can serve the built React SPA directly from a single process.
 
 If the frontend and backend are deployed on different origins, configure:
