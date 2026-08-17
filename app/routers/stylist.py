@@ -19,7 +19,7 @@ from pydantic import BaseModel
 
 router = APIRouter(prefix="/api", tags=["stylist"])
 
-GEMINI_MODEL = "gemini-3.7-flash"
+GEMINI_MODEL = "gemini-3.5-flash"
 GEMINI_ENDPOINT = f"https://generativelanguage.googleapis.com/v1beta/models/{GEMINI_MODEL}:generateContent"
 
 
