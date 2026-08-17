@@ -43,7 +43,15 @@ export async function fetchProductsForShop(shopId: string): Promise<ShopProduct[
   if (error) throw new Error(error.message);
   return (data as ShopProductRow[]).map(rowToProduct);
 }
-
+/** Every product from every shop — public, powers the Discover feed. */
+export async function fetchAllShopProducts(): Promise<ShopProduct[]> {
+  const { data, error } = await supabase
+    .from("shop_products")
+    .select("*")
+    .order("created_at", { ascending: false });
+  if (error) throw new Error(error.message);
+  return (data as ShopProductRow[]).map(rowToProduct);
+}
 export async function addShopProduct(
   shopId: string,
   product: { name: string; category: GarmentCategory | null; price: number | null; imageUrl: string }
