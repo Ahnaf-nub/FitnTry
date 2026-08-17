@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useEffect, useState } from "react"; 
 import { useNavigate } from "react-router-dom";
 import { X } from "lucide-react";
 import { DiscoverCard } from "@/components/discover/DiscoverCard";
@@ -9,8 +9,26 @@ import { useTryOnStore } from "@/hooks/useTryOnStore";
 import { useToast } from "@/components/ui/Toast";
 import { formatPrice } from "@/lib/utils";
 import { Button } from "@/components/ui/Button";
-
+import { fetchAllShopProducts, ShopProduct } from "@/services/shopProductsApi";
+function shopProductToItem(p: ShopProduct): RecommendationItem {
+  return {
+    id: `shop_${p.id}`,
+    name: p.name,
+    category: p.category ?? "Full Looks",
+    price: p.price ?? 0,
+    image: p.imageUrl,
+  };
+}
 export default function Discover() {
+const [shopProducts, setShopProducts] = useState<ShopProduct[]>([]);
+
+useEffect(() => {
+  let cancelled = false;
+  fetchAllShopProducts()
+    .then((products) => { if (!cancelled) setShopProducts(products); })
+    .catch(() => {});
+  return () => { cancelled = true; };
+}, []);
   const navigate = useNavigate();
   const { setGarment } = useTryOnStore();
   const { push } = useToast();
@@ -30,11 +48,28 @@ export default function Discover() {
     });
   }
 
-  function tryOn(item: RecommendationItem) {
-    const full = garments.find((g) => g.id === item.id);
-    if (full) setGarment(full);
+function tryOn(item: RecommendationItem) {
+  const shopProduct = shopProducts.find((p) => `shop_${p.id}` === item.id);
+  if (shopProduct) {
+    setGarment({
+      id: item.id,
+      name: shopProduct.name,
+      category: item.category,
+      price: item.price,
+      image: shopProduct.imageUrl,
+      tag: "New",
+    });
     navigate("/try-on");
+    return;
   }
+  const full = garments.find((g) => g.id === item.id);
+  if (full) setGarment(full);
+  navigate("/try-on");
+}
+  const shopSection =
+  shopProducts.length > 0
+    ? { id: "shops", title: "From Local Shops", subtitle: "Newly added by shops on FitnTry", items: shopProducts.map(shopProductToItem) }
+    : null;
 
   return (
     <div className="py-10 sm:py-14">
@@ -47,7 +82,7 @@ export default function Discover() {
       </div>
 
       <div className="flex flex-col gap-14">
-        {discoverSections.map((section) => (
+        {[...(shopSection ? [shopSection] : []), ...discoverSections].map((section) => (
           <section key={section.id} className="container-FitnTry">
             <div className="mb-5 flex items-end justify-between">
               <div>
